@@ -29,13 +29,15 @@ def build_from_path(hparams, input_dirs, mel_dir, linear_dir, wav_dir, n_jobs=12
 	executor = ProcessPoolExecutor(max_workers=n_jobs)
 	futures = []
 	index = 1
-	for input_dir in input_dirs:
-		with open(os.path.join(input_dir, 'metadata.csv'), encoding='utf-8') as f:
+	for input_lst in os.listdir(input_dirs):
+		with open(os.path.join(input_dirs, input_lst), encoding='utf-8') as f:
 			for line in f:
-				parts = line.strip().split('|')
-				basename = parts[0]
-				wav_path = os.path.join(input_dir, 'wavs', '{}.wav'.format(basename))
-				text = parts[2]
+				if len(line)<10:
+					continue
+				parts = line.strip().split("\t")
+				basename = parts[1][1:]
+				wav_path = parts[1]
+				text = parts[3]
 				futures.append(executor.submit(partial(_process_utterance, mel_dir, linear_dir, wav_dir, basename, wav_path, text, hparams)))
 				index += 1
 
@@ -151,12 +153,21 @@ def _process_utterance(mel_dir, linear_dir, wav_dir, index, wav_path, text, hpar
 	time_steps = len(out)
 
 	# Write the spectrogram and audio to disk
-	audio_filename = 'audio-{}.npy'.format(index)
-	mel_filename = 'mel-{}.npy'.format(index)
-	linear_filename = 'linear-{}.npy'.format(index)
-	np.save(os.path.join(wav_dir, audio_filename), out.astype(out_dtype), allow_pickle=False)
-	np.save(os.path.join(mel_dir, mel_filename), mel_spectrogram.T, allow_pickle=False)
-	np.save(os.path.join(linear_dir, linear_filename), linear_spectrogram.T, allow_pickle=False)
+	audio_filename = index.split(".")[0]+".npy"
+	mel_filename = index.split(".")[0]+".npy"
+	linear_filename = index.split(".")[0]+".npy"
+
+	path_audio = os.path.join(wav_dir, audio_filename)
+	os.makedirs(os.path.dirname(path_audio), exist_ok=True)
+	np.save(path_audio, out.astype(out_dtype), allow_pickle=False)
+
+	path_mel = os.path.join(mel_dir, mel_filename)
+	os.makedirs(os.path.dirname(path_mel), exist_ok=True)
+	np.save(path_mel, mel_spectrogram.T, allow_pickle=False)
+
+	path_linear = os.path.join(linear_dir, mel_filename)
+	os.makedirs(os.path.dirname(path_linear), exist_ok=True)
+	np.save(path_linear, linear_spectrogram.T, allow_pickle=False)
 
 	# Return a tuple describing this training example
-	return (audio_filename, mel_filename, linear_filename, time_steps, mel_frames, text)
+	return audio_filename, mel_filename, linear_filename, time_steps, mel_frames, text

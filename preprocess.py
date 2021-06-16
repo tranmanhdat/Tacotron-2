@@ -31,21 +31,9 @@ def write_metadata(metadata, out_dir):
     print('Max mel frames length: {}'.format(max(int(m[4]) for m in metadata)))
     print('Max audio timesteps length: {}'.format(max(m[3] for m in metadata)))
 
-def norm_data(args):
-
-    merge_books = (args.merge_books=='True')
-
-    print('Selecting data folders..')
-    supported_datasets = ['LJSpeech-1.0', 'LJSpeech-1.1', 'M-AILABS']
-    if args.dataset not in supported_datasets:
-        raise ValueError('dataset value entered {} does not belong to supported datasets: {}'.format(
-                args.dataset, supported_datasets))
-
-    if args.dataset.startswith('LJSpeech'):
-        return [os.path.join(args.base_dir, args.dataset)]
 
 def run_preprocess(args, hparams):
-    input_folders = norm_data(args)
+    input_folders = args.dataset
     output_folder = os.path.join(args.base_dir, args.output)
 
     preprocess(args, input_folders, output_folder, hparams)
