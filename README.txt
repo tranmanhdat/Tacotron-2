@@ -1,2 +1,3 @@
 python preprocess.py --dataset /root/src/...
-python train --model='Tacotron'
+python train --model='Tacotron' --eval_interval 9999999
+python synthesize.py --model='Tacotron' --mode='synthesis' --GTA=True
